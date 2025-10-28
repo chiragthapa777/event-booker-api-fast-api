@@ -1,0 +1,1 @@
+PASSWORD_REGEX = r"^[A-Za-z\d@$!%*?&]{8,30}$"
