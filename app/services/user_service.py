@@ -1,9 +1,11 @@
 import math
 from typing import Any
 from sqlalchemy import func, text
-from sqlmodel import Session, and_, select
-from app.dtos.user_dto import AppUserRead
+from sqlmodel import Session, and_, select, update
+from app.dtos.user_dto import AppUserRead, ProfileUpdateRequestDto
 from app.models.app_user_model import AppUser
+from app.services import file_service
+from app.types.errors import AppError
 from app.types.pagination_data import PaginationData
 from app.utils.pagination_utils import PaginationOption
 from sqlalchemy.orm import joinedload
@@ -17,12 +19,11 @@ def find_by_email(email: str, session: Session) -> AppUser | None:
     return session.exec(select(AppUser).where(AppUser.email == email)).first()
 
 
-def find_by_id(id: str, session: Session) -> AppUserRead | None:
+def find_by_id(id: str, session: Session) -> AppUser | None:
     data = session.exec(
         select(AppUser).options(joinedload(AppUser.profile)).where(AppUser.id == id)
     ).first()
-    user_response = AppUserRead.model_validate(data)
-    return user_response
+    return data
 
 
 def find_by_phone_number(phone_number: str, session: Session) -> AppUser | None:
@@ -31,16 +32,18 @@ def find_by_phone_number(phone_number: str, session: Session) -> AppUser | None:
     ).first()
 
 
-def create_from_dto(user: Any, session: Session):
-    pass
-
-
-def update(user: AppUser, update: Any, session: Session):
-    pass
-
-
-def delete(user: AppUser, session: Session):
-    pass
+def update_profile(user: AppUser, updateDto: ProfileUpdateRequestDto, session: Session)->AppUser:
+    update_dict = updateDto.model_dump(exclude_unset=True)
+    if 'phone_number' in update_dict:
+        update_dict['phone_verified_at']=None
+    if 'profile_id' in update_dict and update_dict['profile_id'] is not None:
+        profile = file_service.find_by_id(update_dict["profile_id"],session)
+        if not profile:
+            raise AppError(message="profile photo not found")
+    session.exec(update(AppUser).where(AppUser.id == user.id).values(update_dict))
+    session.commit()
+    session.refresh(user)
+    return user
 
 
 def pagination_find(
@@ -60,6 +63,9 @@ def pagination_find(
 
     # Base Query
     sq = select(AppUser)
+
+    # Joins
+    sq.options(joinedload(AppUser.profile))
 
     # Filters
     if where_conditions:

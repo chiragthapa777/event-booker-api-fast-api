@@ -2,11 +2,10 @@ from pydantic import BaseModel, Field, EmailStr, ValidationError, field_validato
 from datetime import date
 from typing import Optional
 from app.constants.regex_const import PASSWORD_REGEX
+from app.dtos.base_dto import BaseDto
 from app.dtos.user_dto import AppUserRead
-from app.models.app_user_model import AppUser
-from app.utils import dto_utils
 
-class RegisterRequestDto(BaseModel):
+class RegisterRequestDto(BaseDto):
     full_name: str = Field(
         title="Full Name",
         example="John Rai",
@@ -44,9 +43,8 @@ class RegisterRequestDto(BaseModel):
     def normalize_email(cls, v):
         return v.strip().lower()
     
-    model_config = dto_utils.default_db_model_config
     
-class LoginRequestDto(BaseModel):
+class LoginRequestDto(BaseDto):
     email: Optional[EmailStr] = Field(
         default=None,
         title="Email Address",
@@ -79,13 +77,10 @@ class LoginRequestDto(BaseModel):
             raise ValidationError("Either email or phone_number must be provided")
         return values
     
-    model_config = dto_utils.default_db_model_config
 
     
-class LoginResponseDto(BaseModel):
+class LoginResponseDto(BaseDto):
     user :AppUserRead
     access_token :str
-
-    model_config = dto_utils.default_db_model_config
 
 

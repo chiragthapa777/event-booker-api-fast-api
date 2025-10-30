@@ -39,4 +39,4 @@ def login(body: Annotated[LoginRequestDto, Body()], session: SessionDep):
 
 @router.get("/me", response_model=AppResponse[AppUser])
 def me(user: AuthDeps):
-    return success_response(data=user)
+    return success_response(data=AppUserRead.model_validate(user))

@@ -8,7 +8,7 @@ from app.dependencies.auth_dep import AuthDeps, AuthDepsOnly
 from app.dependencies.session_dep import SessionDep
 from app.dtos.pagination_query_dto import PaginationQueryDto
 from app.dtos.response_dto import AppResponse
-from app.models.app_user_model import AppUser
+from app.dtos.user_dto import AppUserRead, ProfileUpdateRequestDto
 from app.services import user_service
 from app.types.pagination_data import PaginationData
 from app.utils.pagination_utils import PaginationOption
@@ -21,7 +21,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=AppResponse[PaginationData[AppUser]])
+@router.get("/", response_model=AppResponse[PaginationData[AppUserRead]])
 def find(session: SessionDep, query: Annotated[PaginationQueryDto, Query()]):
     data = user_service.pagination_find(
         PaginationOption(
@@ -35,13 +35,14 @@ def find(session: SessionDep, query: Annotated[PaginationQueryDto, Query()]):
     )
     return success_response(data=data, code=HTTPStatus.OK)
 
-@router.get("/{user_id}", response_model=AppResponse[AppUser])
+@router.get("/{user_id}", response_model=AppResponse[AppUserRead])
 def find(session: SessionDep, user_id: UUID = Path(..., description="User UUID")):
     user = user_service.find_by_id(user_id,session)
     if not user:
         raise HTTPException(detail="User not found",status_code=HTTPStatus.NOT_FOUND)
-    return success_response(data=user, code=HTTPStatus.FOUND)
+    return success_response(data=AppUserRead.model_validate(user), code=HTTPStatus.FOUND)
 
-@router.patch("/update-profile", response_model=AppResponse[AppUser])
-def update_profile(session: SessionDep, user:AuthDeps, body:Annotated[Any, Body()]):
-    return success_response(data=body, code=HTTPStatus.FOUND)
+@router.patch("/update-profile", response_model=AppResponse[AppUserRead])
+def update_profile(session: SessionDep, user:AuthDeps, body:Annotated[ProfileUpdateRequestDto, Body()]):
+    user = user_service.update_profile(user, body, session)
+    return success_response(data=AppUserRead.model_validate(user), code=HTTPStatus.FOUND)

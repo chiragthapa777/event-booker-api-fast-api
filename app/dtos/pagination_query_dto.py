@@ -1,8 +1,10 @@
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from app.dtos.base_dto import BaseDto
 
 
-class PaginationQueryDto(BaseModel):
+class PaginationQueryDto(BaseDto):
     search: str | None = Field(default=None)
     limit: int = Field(default=20, gt=0, le=100)
     page: int = Field(default=1, ge=0)

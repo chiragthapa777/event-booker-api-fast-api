@@ -64,3 +64,10 @@ def pagination_find(
     total_page = math.ceil(total / pagination_options.limit)
 
     return PaginationData(list=data_list, total=total, total_page=total_page)
+
+def find_by_id(id: str, session: Session) -> File | None:
+    data = session.exec(
+        select(File).where(File.id == id)
+    ).first()
+    return data
+
