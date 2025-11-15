@@ -3,7 +3,8 @@ from datetime import datetime, timezone
 from uuid import UUID, uuid4
 from decimal import Decimal
 import uuid
-from sqlmodel import SQLModel, Field
+from sqlmodel import Relationship, SQLModel, Field
+
 
 
 
@@ -18,3 +19,7 @@ class EventTicket(SQLModel, table=True):
     price: Decimal = Field(default=0)
     total_qty: int = Field(default=0)
     total_booked: int = Field(default=0)
+
+    event: Optional["Event"] = Relationship(
+        back_populates="tickets", sa_relationship_kwargs={"lazy": "noload"}
+    )

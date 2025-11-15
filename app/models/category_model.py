@@ -1,7 +1,10 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional
 import uuid
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
+from app.models.event_category_model import EventCategory
+from app.models.event_model import Event
 
 
 class Category(SQLModel, table=True):
@@ -13,3 +16,10 @@ class Category(SQLModel, table=True):
 
     name: str = Field(..., max_length=255, sa_column_kwargs={"unique": True})
     description: Optional[str] = None
+
+    # Many-to-many: category <-> event
+    events: List["Event"] = Relationship(
+        back_populates="categories",
+        link_model=EventCategory,
+        sa_relationship_kwargs={"lazy": "noload"},
+    )

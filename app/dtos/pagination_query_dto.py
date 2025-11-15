@@ -11,3 +11,7 @@ class PaginationQueryDto(BaseDto):
     order_by: str | None = Field(default=None)
     order_direction: Literal["desc", "asc"] = "desc"
 
+
+class EventQueryDto(PaginationQueryDto):
+    categoryIds: str | None = Field(default="", description="comma separated")
+    statuses: str | None = Field(default="", description="comma separated")

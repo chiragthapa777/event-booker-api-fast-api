@@ -1,0 +1,28 @@
+{
+  "name": "test event name",
+  "date": "2025-11-15T14:24:55.664Z",
+  "venue": "valley party palace",
+  "lng": 11,
+  "lat":22,
+  "description": "this is a good event",
+  "termsAndCondition": "this is terms",
+  "categoryIds": [
+    "83c696de-ad2d-4c67-ba54-a70d143f936b",
+    "6b3a583c-cb10-40c7-80d6-30a85591511f"
+  ],
+  "eventLayoutPhotoId": "d14798f2-a6ad-4a66-8b3f-4b714d870313",
+  "eventBannerPhotoId": "d14798f2-a6ad-4a66-8b3f-4b714d870313",
+  "eventPhotoId": "d14798f2-a6ad-4a66-8b3f-4b714d870313",
+  "tickets": [
+    {
+      "name": "front seat",
+      "price": 1000,
+      "totalQty": 10
+    },
+        {
+      "name": "back seat",
+      "price": 500,
+      "totalQty": 30
+    }
+  ]
+}
