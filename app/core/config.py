@@ -18,6 +18,9 @@ class AppConfig(BaseSettings):
     aws_secret_access_key: str
     aws_s3_bucket_name: str
 
+    smtp_sender_email: str
+    smtp_app_password: str
+
     model_config = SettingsConfigDict(env_file=".env")
 
     @computed_field

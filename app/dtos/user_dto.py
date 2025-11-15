@@ -86,3 +86,10 @@ class ProfileUpdateRequestDto(BaseDto):
                 "Full name can only contain letters, spaces, periods, hyphens, and apostrophes."
             )
         return v
+
+
+class VerifyCode(BaseDto):
+    code: Optional[int] = Field(
+        title="code",
+        example=112233,
+    )

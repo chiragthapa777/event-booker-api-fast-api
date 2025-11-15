@@ -7,6 +7,7 @@ from .event_ticket_model import EventTicket
 from .booking_model import Booking
 from .booking_ticket_model import BookingTicket
 from .payment_model import Payment
+from .token_model import Token
 
 __all__ = [
     "File",
@@ -20,4 +21,5 @@ __all__ = [
     "Booking",
     "BookingTicket",
     "Payment",
+    "Token"
 ]

@@ -1,10 +1,12 @@
+from datetime import datetime, timezone
 import math
-from typing import Any
+from fastapi import BackgroundTasks
 from sqlalchemy import func, text
 from sqlmodel import Session, and_, select, update
 from app.dtos.user_dto import AppUserRead, ProfileUpdateRequestDto
 from app.models.app_user_model import AppUser
-from app.services import file_service
+from app.services import file_service, token_service
+from app.services.email_service import send_email
 from app.types.errors import AppError
 from app.types.pagination_data import PaginationData
 from app.utils.pagination_utils import PaginationOption
@@ -32,12 +34,14 @@ def find_by_phone_number(phone_number: str, session: Session) -> AppUser | None:
     ).first()
 
 
-def update_profile(user: AppUser, updateDto: ProfileUpdateRequestDto, session: Session)->AppUser:
+def update_profile(
+    user: AppUser, updateDto: ProfileUpdateRequestDto, session: Session
+) -> AppUser:
     update_dict = updateDto.model_dump(exclude_unset=True)
-    if 'phone_number' in update_dict:
-        update_dict['phone_verified_at']=None
-    if 'profile_id' in update_dict and update_dict['profile_id'] is not None:
-        profile = file_service.find_by_id(update_dict["profile_id"],session)
+    if "phone_number" in update_dict:
+        update_dict["phone_verified_at"] = None
+    if "profile_id" in update_dict and update_dict["profile_id"] is not None:
+        profile = file_service.find_by_id(update_dict["profile_id"], session)
         if not profile:
             raise AppError(message="profile photo not found")
     session.exec(update(AppUser).where(AppUser.id == user.id).values(update_dict))
@@ -99,3 +103,38 @@ def pagination_find(
         total=total,
         total_page=total_page,
     )
+
+
+def send_email_validation_code(
+    user: AppUser, session: Session, background_tasks: BackgroundTasks
+):
+    code = token_service.create_token(
+        session=session, resource_id=str(user.id), resource_type="user_email_verification"
+    )
+    session.commit()
+    subject = "Your Email Verification Code"
+    html_body = f"""
+    <html>
+      <body>
+        <p>Hello {user.full_name},</p>
+        <p>Your email verification code is:</p>
+        <h2>{code}</h2>
+        <p>This code will expire in 5 minutes.</p>
+        <p>Yours,</p>
+        <p>Events Booker Team</p>
+      </body>
+    </html>
+    """
+    background_tasks.add_task(
+        send_email, to_emails=[user.email], subject=subject, body_html=html_body
+    )
+
+def verify_email_validation_code(user: AppUser, session: Session, code:int):
+    valid = token_service.verify_token(session, code, "user_email_verification", str(user.id))
+    if not valid:
+        raise AppError("Invalid token")
+    user.email_verified_at = datetime.now(timezone.utc)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
