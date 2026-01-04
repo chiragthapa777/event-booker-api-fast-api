@@ -2,7 +2,7 @@ from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
 import uuid
-from pydantic import Field
+from pydantic import Field, field_validator, validator
 from app.dtos.base_dto import BaseDto
 from app.dtos.ticket_dto import TicketInputDto, TicketRead
 
@@ -32,6 +32,35 @@ class EventCreateDto(BaseDto):
     event_photo_id: Optional[str] = None
     tickets: Optional[List[TicketInputDto]] = None
 
+    @field_validator(
+        "event_layout_photo_id",
+        "event_banner_photo_id",
+        "event_photo_id",
+        mode="before",
+    )
+    @classmethod
+    def validate_uuid(cls, v):
+        if v is None:
+            return v
+        try:
+            uuid.UUID(v)
+        except ValueError:
+            raise ValueError("Must be a valid UUID string")
+        return v
+
+    @field_validator("category_ids", mode="before")
+    @classmethod
+    def validate_category_ids(cls, v):
+        if v is None:
+            return v
+
+        for item in v:
+            try:
+                uuid.UUID(item)
+            except ValueError:
+                raise ValueError("Each category_id must be a valid UUID string")
+        return v
+
 
 class EventUpdateDto(BaseDto):
     name: Optional[str] = None
@@ -46,6 +75,34 @@ class EventUpdateDto(BaseDto):
     event_banner_photo_id: Optional[str] = None
     event_photo_id: Optional[str] = None
     tickets: Optional[List[TicketInputDto]] = None
+
+    @field_validator(
+        "event_layout_photo_id",
+        "event_banner_photo_id",
+        "event_photo_id",
+        mode="before",
+    )
+    @classmethod
+    def validate_uuid(cls, v):
+        if v is None:
+            return v
+        try:
+            uuid.UUID(v)
+        except ValueError:
+            raise ValueError("Must be a valid UUID string")
+        return v
+
+    @field_validator("category_ids", mode="before")
+    @classmethod
+    def validate_category_ids(cls, v):
+        if v is None:
+            return v
+
+        for item in v:
+            try:
+                uuid.UUID(item)
+            except ValueError:
+                raise ValueError("Each category_id must be a valid UUID string")
 
 
 class EventRead(BaseDto):

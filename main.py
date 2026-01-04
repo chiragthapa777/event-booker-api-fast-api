@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-import logging
 import uvicorn
 from fastapi import FastAPI
 from app.core import config, logger
@@ -54,4 +53,5 @@ if __name__ == "__main__":
         port=conf.port,
         reload=conf.env == Env.LOCAL,
         log_config=None,
+        workers= 2 if conf.env != Env.LOCAL else None
     )

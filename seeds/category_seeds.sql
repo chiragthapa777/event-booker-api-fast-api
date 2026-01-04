@@ -1,4 +1,4 @@
-wINSERT INTO category (name, description)
+INSERT INTO category (name, description)
 VALUES
 ('Concert', 'Live music events featuring bands, artists, or orchestras.'),
 ('Conference', 'Professional gatherings focused on specific industries or topics.'),

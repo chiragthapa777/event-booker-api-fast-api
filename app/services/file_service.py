@@ -1,6 +1,7 @@
 import math
 from typing import Any
 from uuid import uuid4
+import uuid
 from fastapi import UploadFile
 from sqlalchemy import func, text
 from sqlmodel import Session, and_, select
@@ -13,7 +14,7 @@ from app.utils.pagination_utils import PaginationOption
 
 
 def file_upload(session: Session, file: UploadFile, folder: str)->File:
-    key = f"{folder}/{uuid4()}.{file.filename.split(".")[-1]}"
+    key = f"{folder}/{uuid4()}.{file.filename.split('.')[-1]}"
     s3.upload_file(file.file, key)
     newFile = File(
         file_path=key,
@@ -65,9 +66,16 @@ def pagination_find(
 
     return PaginationData(list=data_list, total=total, total_page=total_page)
 
-def find_by_id(id: str, session: Session) -> File | None:
-    data = session.exec(
-        select(File).where(File.id == id)
-    ).first()
+def find_by_id(id: str | uuid.UUID, session: Session) -> File | None:
+    # Accept either a uuid.UUID or a string. If it's a string, validate/parse it
+    if id is None:
+        return None
+    try:
+        id_uuid = id if isinstance(id, uuid.UUID) else uuid.UUID(str(id))
+    except Exception:
+        # Provide a service-level error instead of raw ValueError from uuid
+        raise AppError(message=f"invalid file id: {id}")
+
+    data = session.exec(select(File).where(File.id == id_uuid)).first()
     return data
 

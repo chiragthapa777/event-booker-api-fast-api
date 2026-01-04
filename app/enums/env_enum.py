@@ -3,6 +3,6 @@ from enum import Enum
 
 class Env(str, Enum):
     LOCAL="local"
-    DEV="DEV"
-    STAGE="STAGE"
-    PROD="PROD"
+    DEV="dev"
+    STAGE="stage"
+    PROD="prod"

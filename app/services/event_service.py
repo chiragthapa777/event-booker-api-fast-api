@@ -15,7 +15,7 @@ from app.dtos.event_dto import (
     EventUpdateDto,
 )
 from app.types.errors import AppError
-from sqlalchemy.orm import joinedload,selectinload
+from sqlalchemy.orm import joinedload, selectinload
 from app.services import ticket_service
 from app.dtos.ticket_dto import TicketRead
 
@@ -79,10 +79,12 @@ def create_event(admin_id: str, dto: EventCreateDto, session: Session) -> Event:
         except Exception as e:
             # rollback created event on ticket failures to keep consistency
             session.exec(
-                "DELETE FROM event_category WHERE event_id = :event_id",
+                text("DELETE FROM event_category WHERE event_id = :event_id"),
                 params={"event_id": str(ev.id)},
             )
-            session.exec("DELETE FROM event WHERE id = :id", params={"id": str(ev.id)})
+            session.exec(
+                text("DELETE FROM event WHERE id = :id"), params={"id": str(ev.id)}
+            )
             raise AppError(e=str(e))
     session.commit()
     session.refresh(ev)
@@ -148,7 +150,17 @@ def delete_event(event_id: str, session: Session) -> None:
 
 
 def find_by_id(event_id: str, session: Session) -> Optional[Event]:
-    return session.exec(select(Event).where(Event.id == event_id)).first()
+    return session.exec(
+        select(Event)
+        .options(
+            joinedload(Event.event_banner_photo),
+            joinedload(Event.event_layout_photo),
+            joinedload(Event.event_photo),
+            selectinload(Event.categories),
+            selectinload(Event.tickets),
+        )
+        .where(Event.id == event_id)
+    ).first()
 
 
 def pagination_find(
@@ -173,8 +185,9 @@ def pagination_find(
     if category_ids:
         where_conditions.append(
             Event.id.in_(
-                select(EventCategory.event_id)
-                .where(EventCategory.category_id.in_(category_ids))
+                select(EventCategory.event_id).where(
+                    EventCategory.category_id.in_(category_ids)
+                )
             )
         )
 
@@ -183,8 +196,10 @@ def pagination_find(
     sq = sq.options(
         joinedload(Event.event_banner_photo),
         joinedload(Event.event_layout_photo),
-        joinedload(Event.event_photo), # for 1 to 1 or many to 1 joined good
-        selectinload(Event.categories), # for 1 to many  and many to many selectinload is best
+        joinedload(Event.event_photo),  # for 1 to 1 or many to 1 joined good
+        selectinload(
+            Event.categories
+        ),  # for 1 to many  and many to many selectinload is best
         selectinload(Event.tickets),
     )
 
@@ -195,10 +210,13 @@ def pagination_find(
     sort_col = pagination_options.sorting_col or "created_at"
     sort_asc = pagination_options.sorting == "asc"
     order_expr = (
-        Event.name.asc() if sort_col == "name" and sort_asc else
-        Event.name.desc() if sort_col == "name" else
-        Event.created_at.asc() if sort_asc else
-        Event.created_at.desc()
+        Event.name.asc()
+        if sort_col == "name" and sort_asc
+        else (
+            Event.name.desc()
+            if sort_col == "name"
+            else Event.created_at.asc() if sort_asc else Event.created_at.desc()
+        )
     )
     sq = sq.order_by(order_expr)
 
@@ -212,7 +230,9 @@ def pagination_find(
     total = session.exec(
         select(func.count(Event.id)).where(*where_conditions), params=params
     ).one()
-    total_page = math.ceil(total / pagination_options.limit) if pagination_options.limit else 0
+    total_page = (
+        math.ceil(total / pagination_options.limit) if pagination_options.limit else 0
+    )
 
     return PaginationData(
         list=[EventRead.model_validate(data) for data in data_list],
